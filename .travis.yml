@@ -6,9 +6,9 @@ rust:
 os:
 - linux
 script:
-- cargo build --features stable --verbose
-- cargo test --features stable --verbose
-- cargo doc --features stable --verbose
+- cargo build --features serde --verbose
+- cargo test --features serde --verbose
+- cargo doc --features serde --verbose
 notifications:
   slack:
     secure: U1MJyiODZHG6wZYEZOaUx6yh/l4yiXzzEG+3ysilbGmeRK+vKq9tktBwqPDDYUdwwgdPCi55Yet1jpxpN+AQgEx0ihxjpzCSIWwv0bl72rd4y2fMxLddMAF6aKaqdMSPtPcldZwPOKTDYtvaOYwba0q9D4TUhqXm/9D7Zfk4IGs=

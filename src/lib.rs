@@ -7,10 +7,11 @@
 // modified, or distributed except according to those terms.
 
 //! Either Struct
-#![feature(crate_visibility_modifier, tool_lints, try_from)]
+#![cfg_attr(feature = "unstable", feature(tool_lints, try_from))]
+#![cfg_attr(feature = "unstable", deny(clippy::all, clippy::pedantic))]
+#![cfg_attr(feature = "unstable", warn(clippy::use_self))]
+
 #![deny(
-    clippy::all,
-    clippy::pedantic,
     macro_use_extern_crate,
     missing_copy_implementations,
     missing_debug_implementations,
@@ -24,7 +25,6 @@
     anonymous_parameters,
     bare_trait_objects,
     box_pointers,
-    clippy::use_self,
     elided_lifetimes_in_paths,
     ellipsis_inclusive_range_patterns,
     keyword_idents,
@@ -42,9 +42,12 @@
 )]
 #![doc(html_root_url = "https://docs.rs/libeither/0.1.0")]
 
-use failure::{Error, Fallible};
+#[cfg(feature = "unstable")]
+use failure::Error;
+use failure::Fallible;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "unstable")]
 use std::convert::TryInto;
 use std::fmt;
 use std::io::{self, BufRead, Read, Write};
@@ -292,7 +295,7 @@ impl<L, R> Either<L, R> {
     }
 
     /// Convert the inners to iters
-    #[allow(clippy::should_implement_trait)]
+    #[cfg_attr(feature = "unstable", allow(clippy::should_implement_trait))]
     pub fn into_iter(self) -> Fallible<Either<L::IntoIter, R::IntoIter>>
     where
         L: IntoIterator,
@@ -317,6 +320,7 @@ impl<L, R> From<Result<L, R>> for Either<L, R> {
     }
 }
 
+#[cfg(feature = "unstable")]
 impl<L, R> TryInto<Result<L, R>> for Either<L, R> {
     type Error = Error;
 
@@ -483,6 +487,7 @@ where
 mod tests {
     use super::Either;
     use failure::Fallible;
+    #[cfg(feature = "unstable")]
     use std::convert::TryInto;
     use std::io::{Cursor, Read, Write};
 
@@ -635,6 +640,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "unstable")]
     fn try_into_result() -> Fallible<()> {
         let left = lefty();
         let result: Result<&str, &str> = Either::try_into(left)?;
