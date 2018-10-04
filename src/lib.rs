@@ -48,7 +48,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use std::io::{self, BufRead, Read, Write};
-use std::iter;
+use std::iter::{self, IntoIterator};
 
 /// A struct representing either a left value, or a right value.
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -290,6 +290,22 @@ impl<L, R> Either<L, R> {
             Err(failure::err_msg("Invalid Either"))
         }
     }
+
+    /// Convert the inners to iters
+    #[allow(clippy::should_implement_trait)]
+    pub fn into_iter(self) -> Fallible<Either<L::IntoIter, R::IntoIter>>
+    where
+        L: IntoIterator,
+        R: IntoIterator<Item = L::Item>,
+    {
+        if let Some(l) = self.left {
+            Ok(Either::new_left(l.into_iter()))
+        } else if let Some(r) = self.right {
+            Ok(Either::new_right(r.into_iter()))
+        } else {
+            Err(failure::err_msg("Invalid Either"))
+        }
+    }
 }
 
 impl<L, R> From<Result<L, R>> for Either<L, R> {
@@ -366,7 +382,7 @@ where
     where
         B: iter::FromIterator<Self::Item>,
     {
-        either_else!(self, inner => inner.collect(), std::iter::FromIterator::from_iter(self))
+        either_else!(self, inner => inner.collect(), std::iter::FromIterator::from_iter(vec![]))
     }
 
     fn all<F>(&mut self, f: F) -> bool
@@ -468,7 +484,7 @@ mod tests {
     use super::Either;
     use failure::Fallible;
     use std::convert::TryInto;
-    use std::io::{Cursor, Read};
+    use std::io::{Cursor, Read, Write};
 
     fn lefty<'a>() -> Either<&'a str, &'a str> {
         Either::new_left("lefty")
@@ -601,11 +617,16 @@ mod tests {
     }
 
     #[test]
-    fn from_result() -> Fallible<()> {
+    fn from_ok_result() -> Fallible<()> {
         let result: Result<&str, &str> = Ok("ok");
         let left = Either::from(result);
         assert!(left.is_left());
         assert_eq!(left.left_ref()?, &"ok");
+        Ok(())
+    }
+
+    #[test]
+    fn from_err_result() -> Fallible<()> {
         let err: Result<&str, &str> = Err("err");
         let right = Either::from(err);
         assert!(right.is_right());
@@ -623,20 +644,148 @@ mod tests {
     }
 
     #[test]
-    fn either_read() -> Fallible<()> {
+    fn either_left_read() -> Fallible<()> {
         let left_cursor = Cursor::new(vec![1, 2, 3, 4, 5]);
-        let right_cursor = Cursor::new(vec![10, 9, 8, 7, 6]);
-
         let mut left: Either<Cursor<Vec<u8>>, Cursor<Vec<u8>>> = Either::new_left(left_cursor);
-        let mut right: Either<Cursor<Vec<u8>>, Cursor<Vec<u8>>> = Either::new_right(right_cursor);
-
         let mut left_buf = [0_u8; 5];
         assert_eq!(left.read(&mut left_buf)?, left_buf.len());
         assert_eq!(left_buf, &vec![1, 2, 3, 4, 5][..]);
+        Ok(())
+    }
 
+    #[test]
+    fn either_right_read() -> Fallible<()> {
+        let right_cursor = Cursor::new(vec![10, 9, 8, 7, 6]);
+        let mut right: Either<Cursor<Vec<u8>>, Cursor<Vec<u8>>> = Either::new_right(right_cursor);
         let mut right_buf = [0_u8; 5];
         assert_eq!(right.read(&mut right_buf)?, right_buf.len());
         assert_eq!(right_buf, &vec![10, 9, 8, 7, 6][..]);
+        Ok(())
+    }
+
+    #[test]
+    fn either_left_write() -> Fallible<()> {
+        let left_buf = Vec::new();
+        let hello = b"hello";
+
+        let mut left: Either<Vec<u8>, Vec<u8>> = Either::new_left(left_buf);
+        assert_eq!(left.write(hello)?, 5);
+        assert_eq!(&left.left_ref()?[..], b"hello");
+        Ok(())
+    }
+
+    #[test]
+    fn either_right_write() -> Fallible<()> {
+        let right_buf = Vec::new();
+        let hello = b"hello";
+
+        let mut right: Either<Vec<u8>, Vec<u8>> = Either::new_right(right_buf);
+        assert_eq!(right.write(hello)?, 5);
+        assert_eq!(&right.right_ref()?[..], b"hello");
+        Ok(())
+    }
+
+    #[test]
+    fn either_left_iter() -> Fallible<()> {
+        let left: Either<Vec<u32>, Vec<u32>> = Either::new_left(vec![1, 2, 3, 4, 5]);
+        let mut right: Either<Vec<u32>, Vec<u32>> = Either::new_right(vec![5, 4, 3, 2, 1]);
+        right.extend(left.into_iter()?);
+        assert_eq!(right.right_ref()?, &vec![5, 4, 3, 2, 1, 1, 2, 3, 4, 5]);
+        Ok(())
+    }
+
+    #[test]
+    fn either_right_iter() -> Fallible<()> {
+        let mut left: Either<Vec<u32>, Vec<u32>> = Either::new_left(vec![1, 2, 3, 4, 5]);
+        let right: Either<Vec<u32>, Vec<u32>> = Either::new_right(vec![5, 4, 3, 2, 1]);
+        left.extend(right.into_iter()?);
+        assert_eq!(left.left_ref()?, &vec![1, 2, 3, 4, 5, 5, 4, 3, 2, 1]);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_json_left() -> Fallible<()> {
+        let left = lefty();
+        let json = serde_json::to_string(&left)?;
+        assert_eq!(json, r#"{"left":"lefty","right":null}"#);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_toml_left() -> Fallible<()> {
+        let left = lefty();
+        let toml = toml::to_string(&left)?;
+        assert_eq!(
+            toml,
+            r#"left = "lefty"
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_json_right() -> Fallible<()> {
+        let right = righty();
+        let json = serde_json::to_string(&right)?;
+        assert_eq!(json, r#"{"left":null,"right":"righty"}"#);
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn serialize_toml_right() -> Fallible<()> {
+        let right = righty();
+        let toml = toml::to_string(&right)?;
+        assert_eq!(
+            toml,
+            r#"right = "righty"
+"#
+        );
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn deserialize_json_left() -> Fallible<()> {
+        let json = r#"{"left":"lefty","right":null}"#;
+        let left: Either<&str, &str> = serde_json::from_str(&json)?;
+        assert!(left.is_left());
+        assert_eq!(left.left_ref()?, &"lefty");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn deserialize_toml_left() -> Fallible<()> {
+        let toml = r#"left = "lefty"
+"#;
+        let left: Either<&str, &str> = toml::from_str(&toml)?;
+        assert!(left.is_left());
+        assert_eq!(left.left_ref()?, &"lefty");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn deserialize_json_right() -> Fallible<()> {
+        let json = r#"{"left":null,"right":"righty"}"#;
+        let right: Either<&str, &str> = serde_json::from_str(&json)?;
+        assert!(right.is_right());
+        assert_eq!(right.right_ref()?, &"righty");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "serde")]
+    fn deserialize_toml_right() -> Fallible<()> {
+        let toml = r#"right = "righty"
+"#;
+        let right: Either<&str, &str> = toml::from_str(&toml)?;
+        assert!(right.is_right());
+        assert_eq!(right.right_ref()?, &"righty");
         Ok(())
     }
 }
