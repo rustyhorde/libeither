@@ -1,7 +1,6 @@
-image: 'rust:latest'
-
 stages:
-  - test
+  - nightly
+  # - stable
   - build
 
 variables:
@@ -12,12 +11,21 @@ before_script:
   - apt-get update -yq
   # - apt-get install -o dir::cache::archives="$APT_CACHE_DIR" -y {{ DEPENDENCIES }}
 
-test:
-  stage: test
+nightly:
+  image: 'rustlang/rust:nightly'
+  stage: nightly
   script:
     - rustc --version
     - cargo --version
-    - cargo test --verbose
+    - cargo test --verbose --features serde,unstable
+
+# stable:
+#   image: 'rust:latest'
+#   stage: stable
+#   script:
+#     - rustc --version
+#     - cargo --version
+#     - cargo test --verbose --features serde
 
 cache:
   paths:
