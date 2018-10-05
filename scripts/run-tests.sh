@@ -1,6 +1,5 @@
 #!/bin/bash
 set -ev
-echo ${TRAVIS_RUST_VERSION}
 
 if [ "${TRAVIS_RUST_VERSION}" = "stable" ]; then
     cargo build --features serde
