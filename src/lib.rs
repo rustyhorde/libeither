@@ -10,7 +10,6 @@
 #![cfg_attr(feature = "unstable", feature(tool_lints, try_from))]
 #![cfg_attr(feature = "unstable", deny(clippy::all, clippy::pedantic))]
 #![cfg_attr(feature = "unstable", warn(clippy::use_self))]
-
 #![deny(
     macro_use_extern_crate,
     missing_copy_implementations,
