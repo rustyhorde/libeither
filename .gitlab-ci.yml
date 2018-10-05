@@ -19,6 +19,7 @@ nightly:
     - cargo --version
     - cargo test --verbose --features serde,unstable
 
+# TODO: Uncomment this when editions hit stable
 # stable:
 #   image: 'rust:latest'
 #   stage: stable

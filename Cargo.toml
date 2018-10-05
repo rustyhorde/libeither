@@ -12,7 +12,7 @@ repository = "https://github.com/rustyhorde/libeither"
 version = "0.1.0"
 
 [package.metadata.docs.rs]
-features = ["serde"]
+features = ["serde","unstable"]
 
 [dependencies]
 failure = "0"

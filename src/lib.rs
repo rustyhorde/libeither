@@ -406,12 +406,6 @@ where
     }
 }
 
-impl<L, R> ExactSizeIterator for Either<L, R>
-where
-    L: ExactSizeIterator,
-    R: ExactSizeIterator<Item = L::Item>,
-{}
-
 fn io_err(msg: &str) -> io::Error {
     io::Error::new(io::ErrorKind::Other, msg)
 }
