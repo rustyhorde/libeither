@@ -178,13 +178,9 @@ impl<L, R> Either<L, R> {
     /// # }
     /// ```
     pub fn left_mut(&mut self) -> Fallible<&mut L> {
-        if self.is_left() {
-            self.left
-                .as_mut()
-                .ok_or_else(|| failure::err_msg("Unable to extract Left value"))
-        } else {
-            Err(failure::err_msg("Cannot mutate the right value of a Left"))
-        }
+        self.left
+            .as_mut()
+            .ok_or_else(|| failure::err_msg("Unable to extract Left value"))
     }
 
     /// Extract a mutable reference to the right value.
@@ -202,13 +198,9 @@ impl<L, R> Either<L, R> {
     /// # }
     /// ```
     pub fn right_mut(&mut self) -> Fallible<&mut R> {
-        if self.is_right() {
-            self.right
-                .as_mut()
-                .ok_or_else(|| failure::err_msg("Unable to extract Right value"))
-        } else {
-            Err(failure::err_msg("Cannot mutate the left value of a Right"))
-        }
+        self.right
+            .as_mut()
+            .ok_or_else(|| failure::err_msg("Unable to extract Right value"))
     }
 
     /// Convert `Either<L, R>` to `Either<R, L>`
