@@ -701,8 +701,8 @@ mod tests {
     fn try_into_right_result() -> Fallible<()> {
         let right = righty();
         let result: Result<&str, &str> = Either::try_into(right)?;
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "righty");
+        assert!(result.is_err());
+        assert_eq!(result, Err("righty"));
         Ok(())
     }
 
