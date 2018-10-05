@@ -205,7 +205,7 @@ impl<L, R> Either<L, R> {
         if self.is_right() {
             self.right
                 .as_mut()
-                .ok_or_else(|| failure::err_msg("Unable to extract Left value"))
+                .ok_or_else(|| failure::err_msg("Unable to extract Right value"))
         } else {
             Err(failure::err_msg("Cannot mutate the left value of a Right"))
         }
@@ -478,11 +478,19 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::Either;
+    use super::{io_err, Either};
     use failure::Fallible;
     #[cfg(feature = "unstable")]
     use std::convert::TryInto;
-    use std::io::{Cursor, Read, Write};
+    use std::error::Error;
+    use std::io::{self, Cursor, Read, Write};
+
+    fn invalid<'a>() -> Either<&'a str, &'a str> {
+        Either {
+            left: None,
+            right: None,
+        }
+    }
 
     fn lefty<'a>() -> Either<&'a str, &'a str> {
         Either::new_left("lefty")
@@ -490,6 +498,14 @@ mod tests {
 
     fn righty<'a>() -> Either<&'a str, &'a str> {
         Either::new_right("righty")
+    }
+
+    #[test]
+    fn io_err_works() {
+        assert_eq!(
+            io_err("test").description(),
+            io::Error::new(io::ErrorKind::Other, "test").description()
+        );
     }
 
     #[test]
@@ -544,6 +560,13 @@ mod tests {
     }
 
     #[test]
+    fn left_ref_mut_invalid() -> Fallible<()> {
+        let mut invalid = invalid();
+        assert!(invalid.left_mut().is_err());
+        Ok(())
+    }
+
+    #[test]
     fn right_mut_on_left() {
         assert!(
             lefty().right_mut().is_err(),
@@ -557,6 +580,13 @@ mod tests {
         assert_eq!(right.right_ref()?, &"righty");
         *(right.right_mut()?) = "right handed";
         assert_eq!(right.right_ref()?, &"right handed");
+        Ok(())
+    }
+
+    #[test]
+    fn right_ref_mut_invalid() -> Fallible<()> {
+        let mut invalid = invalid();
+        assert!(invalid.right_mut().is_err());
         Ok(())
     }
 
@@ -581,11 +611,28 @@ mod tests {
     }
 
     #[test]
+    fn flip_invalid() -> Fallible<()> {
+        let invalid: Either<&str, &str> = Either {
+            left: None,
+            right: None,
+        };
+        assert!(invalid.flip().is_err());
+        Ok(())
+    }
+
+    #[test]
     fn map_left() -> Fallible<()> {
         let left: Either<u8, u8> = Either::new_left(10);
         let mapped_left = left.map_left(|x| x * 10)?;
         assert!(mapped_left.is_left());
         assert_eq!(mapped_left.left_ref()?, &100);
+        Ok(())
+    }
+
+    #[test]
+    fn map_left_invalid() -> Fallible<()> {
+        let invalid = invalid();
+        assert!(invalid.map_left(|x| x.to_string()).is_err());
         Ok(())
     }
 
@@ -603,6 +650,13 @@ mod tests {
         let mapped_right = right.map_right(|x| x * 10)?;
         assert!(mapped_right.is_right());
         assert_eq!(mapped_right.right_ref()?, &100);
+        Ok(())
+    }
+
+    #[test]
+    fn map_right_invalid() -> Fallible<()> {
+        let invalid = invalid();
+        assert!(invalid.map_right(|x| x.to_string()).is_err());
         Ok(())
     }
 
@@ -634,11 +688,30 @@ mod tests {
 
     #[test]
     #[cfg(feature = "unstable")]
-    fn try_into_result() -> Fallible<()> {
+    fn try_into_left_result() -> Fallible<()> {
         let left = lefty();
         let result: Result<&str, &str> = Either::try_into(left)?;
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), "lefty");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn try_into_right_result() -> Fallible<()> {
+        let right = righty();
+        let result: Result<&str, &str> = Either::try_into(right)?;
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), "righty");
+        Ok(())
+    }
+
+    #[test]
+    #[cfg(feature = "unstable")]
+    fn try_into_invalid() -> Fallible<()> {
+        let invalid = invalid();
+        let result: Result<Result<&str, &str>, failure::Error> = Either::try_into(invalid);
+        assert!(result.is_err());
         Ok(())
     }
 
@@ -699,6 +772,16 @@ mod tests {
         let right: Either<Vec<u32>, Vec<u32>> = Either::new_right(vec![5, 4, 3, 2, 1]);
         left.extend(right.into_iter()?);
         assert_eq!(left.left_ref()?, &vec![1, 2, 3, 4, 5, 5, 4, 3, 2, 1]);
+        Ok(())
+    }
+
+    #[test]
+    fn invalid_into_iter() -> Fallible<()> {
+        let invalid: Either<Vec<u32>, Vec<u32>> = Either {
+            left: None,
+            right: None,
+        };
+        assert!(invalid.into_iter().is_err());
         Ok(())
     }
 
