@@ -128,3 +128,8 @@ build: false
 # environment variable.
 test_script:
   - cargo test --verbose %cargoflags%
+
+notifications:
+  - provider: Slack
+    incoming_webhook:
+      secure: zFh5haEvvSEoe3St75VQXEuBZh57gMYCV1iDVfDhSlKt9OqqM5HtClc2Sgrhg38Q0i8Up4DBDF5t4QOih1NIyrv9x8v
