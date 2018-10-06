@@ -4,7 +4,6 @@
 [![Crates.io](https://img.shields.io/crates/l/libeither.svg)](https://crates.io/crates/libeither)
 [![Crates.io](https://img.shields.io/crates/d/libeither.svg)](https://crates.io/crates/libeither)
 
-
 ## Build Status
 |              |                                                                                   |
 ---------------|-----------------------------------------------------------------------------------|
