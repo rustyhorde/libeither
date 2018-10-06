@@ -94,9 +94,10 @@ environment:
 # See Appveyor documentation for specific details. In short, place any channel or targets you wish
 # to allow build failures on (usually nightly at least is a wise choice). This will prevent a build
 # or test failure in the matching channels/targets from failing the entire build.
-# matrix:
-#   allow_failures:
-    # - channel: nightly
+# TODO: Remove this allowed failure when editions become stable.
+matrix:
+  allow_failures:
+    - channel: stable
 
 # If you only care about stable channel build failures, uncomment the following line:
     #- channel: beta
