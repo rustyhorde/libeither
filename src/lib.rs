@@ -285,6 +285,62 @@ impl<L, R> Either<L, R> {
         }
     }
 
+    /// Apply the function `f` on the value in the `Left` variant if it
+    /// is present. If this is applied to a `Right`, the `Right` is
+    /// returned.
+    ///
+    /// ```
+    /// # use failure::Fallible;
+    /// # use libeither::Either;
+    /// #
+    /// # fn main() -> Fallible<()> {
+    /// let left: Either<u8, u8> = Either::new_left(10);
+    /// let and_then_right: Either<u8, u8> = left.and_then_left(|x| Either::new_right(x * 10))?;
+    /// assert!(and_then_right.is_right());
+    /// assert_eq!(and_then_right.right_ref()?, &100);
+    /// #   Ok(())
+    /// # }
+    pub fn and_then_left<F, S>(self, f: F) -> Fallible<Either<S, R>>
+    where
+        F: FnOnce(L) -> Either<S, R>,
+    {
+        if let Some(l) = self.left {
+            Ok(f(l))
+        } else if let Some(r) = self.right {
+            Ok(Either::new_right(r))
+        } else {
+            Err(failure::err_msg("Invalid Either"))
+        }
+    }
+
+    /// Apply the function `f` on the value in the `Right` variant if it
+    /// is present. If this is applied to a `Left`, the `Left` is
+    /// returned.
+    ///
+    /// ```
+    /// # use failure::Fallible;
+    /// # use libeither::Either;
+    /// #
+    /// # fn main() -> Fallible<()> {
+    /// let right: Either<u8, u8> = Either::new_right(10);
+    /// let and_then_left: Either<u8, u8> = right.and_then_right(|x| Either::new_left(x * 10))?;
+    /// assert!(and_then_left.is_left());
+    /// assert_eq!(and_then_left.left_ref()?, &100);
+    /// #   Ok(())
+    /// # }
+    pub fn and_then_right<F, S>(self, f: F) -> Fallible<Either<L, S>>
+    where
+        F: FnOnce(R) -> Either<L, S>,
+    {
+        if let Some(l) = self.left {
+            Ok(Either::new_left(l))
+        } else if let Some(r) = self.right {
+            Ok(f(r))
+        } else {
+            Err(failure::err_msg("Invalid Either"))
+        }
+    }
+
     /// Convert the inners to iters
     #[cfg_attr(feature = "unstable", allow(clippy::should_implement_trait))]
     pub fn into_iter(self) -> Fallible<Either<L::IntoIter, R::IntoIter>>
@@ -657,6 +713,64 @@ mod tests {
         let left: Either<u8, u8> = Either::new_left(10);
         let mapped_left = left.map_right(|x| x * 10)?;
         assert_eq!(left, mapped_left);
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_left() -> Fallible<()> {
+        let left: Either<u8, u8> = Either::new_left(10);
+        let and_then_right: Either<u8, u8> = left.and_then_left(|x| Either::new_right(x * 10))?;
+        assert!(and_then_right.is_right());
+        assert_eq!(and_then_right.right_ref()?, &100);
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_left_on_right() -> Fallible<()> {
+        let right: Either<u8, u8> = Either::new_right(10);
+        let and_then_right: Either<u8, u8> = right.and_then_left(|x| Either::new_left(x * 10))?;
+        assert!(and_then_right.is_right());
+        assert_eq!(and_then_right.right_ref()?, &10);
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_left_invalid() -> Fallible<()> {
+        let invalid = invalid();
+        assert!(
+            invalid
+                .and_then_left(|x| Either::new_left(x.len()))
+                .is_err()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_right() -> Fallible<()> {
+        let right: Either<u8, u8> = Either::new_right(10);
+        let and_then_left: Either<u8, u8> = right.and_then_right(|x| Either::new_left(x * 10))?;
+        assert!(and_then_left.is_left());
+        assert_eq!(and_then_left.left_ref()?, &100);
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_right_on_left() -> Fallible<()> {
+        let left: Either<u8, u8> = Either::new_left(10);
+        let and_then_left: Either<u8, u8> = left.and_then_right(|x| Either::new_right(x * 10))?;
+        assert!(and_then_left.is_left());
+        assert_eq!(and_then_left.left_ref()?, &10);
+        Ok(())
+    }
+
+    #[test]
+    fn and_then_right_invalid() -> Fallible<()> {
+        let invalid = invalid();
+        assert!(
+            invalid
+                .and_then_right(|x| Either::new_right(x.len()))
+                .is_err()
+        );
         Ok(())
     }
 
