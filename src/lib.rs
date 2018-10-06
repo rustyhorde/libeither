@@ -54,7 +54,7 @@ use std::iter::{self, IntoIterator};
 
 /// A struct representing either a left value, or a right value.
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Either<L, R> {
     /// The left value in the struct.
     left: Option<L>,
