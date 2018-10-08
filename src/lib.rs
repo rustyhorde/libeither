@@ -6,7 +6,62 @@
 // option. All files in the project carrying such notice may not be copied,
 // modified, or distributed except according to those terms.
 
-//! Either Struct
+//! Either struct
+//!
+//! This is heavily influenced by the [Either](https://docs.rs/either/latest)
+//! enum library.  A struct version was required to be serializable to/from TOML,
+//! where enums are not valid.  If you don't need struct specific
+//! serialization, you may want to use the enum Either instead.
+//!
+//! # Features
+//! * `serde` - Enable serialization (on by default)
+//! * `use_std` - Enable the standard library (on by default)
+//! * `unstable` - Enable unstable options (nightly only, off by default)
+//!
+//! # Examples
+//! ```
+//! # use failure::Fallible;
+//! # use libeither::Either;
+//! #
+//! # fn main() -> Fallible<()> {
+//! let mut left: Either<&str, &str> = Either::new_left("lefty");
+//!
+//! // Check for left or right
+//! assert!(left.is_left());
+//! assert!(!left.is_right());
+//!
+//! // Check a reference to the contained value.
+//! assert_eq!(left.left_ref()?, &"lefty");
+//! assert!(left.right_ref().is_err());
+//!
+//! // Mutate the contained value.
+//! *(left.left_mut()?) = "left handed";
+//! assert_eq!(left.left_ref()?, &"left handed");
+//! assert!(left.right_mut().is_err());
+//!
+//! // Flip the value
+//! let flipped = left.flip()?;
+//! assert_eq!(flipped.right_ref()?, &"left handed");
+//! assert!(flipped.left_ref().is_err());
+//!
+//! // Map a function over the left
+//! let mapped_left: Either<usize, _> = left.map_left(|x| x.len())?;
+//! assert_eq!(mapped_left.left_ref()?, &11);
+//!
+//! // Chain execution
+//! let new_left: Either<&str, &str> = Either::new_left("lefty");
+//! let and_then_left: Either<usize, _> = new_left
+//!     .and_then_left(|x| Either::new_left(x.len()))?
+//!     .and_then_left(|x| Either::new_left(x * 10))?;
+//! assert_eq!(and_then_left.left_ref()?, &50);
+//!
+//! let new_right: Either<&str, &str> = Either::new_right("righty");
+//! assert!(new_right
+//!     .and_then_left(|x: &str| Either::new_left(x.len())).is_err()
+//! );
+//! #   Ok(())
+//! # }
+//! ```
 #![cfg_attr(feature = "unstable", feature(tool_lints, try_from))]
 #![cfg_attr(feature = "unstable", deny(clippy::all, clippy::pedantic))]
 #![cfg_attr(feature = "unstable", warn(clippy::use_self))]
@@ -50,7 +105,6 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use std::io::{self, BufRead, Read, Write};
-use std::iter::{self, IntoIterator};
 
 /// A struct representing either a left value, or a right value.
 #[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
@@ -286,18 +340,19 @@ impl<L, R> Either<L, R> {
     }
 
     /// Apply the function `f` on the value in the `Left` variant if it
-    /// is present. If this is applied to a `Right`, the `Right` is
-    /// returned.
+    /// is present. If this is applied to a `Right`, a failure is generated.
     ///
     /// ```
     /// # use failure::Fallible;
     /// # use libeither::Either;
     /// #
     /// # fn main() -> Fallible<()> {
-    /// let left: Either<u8, u8> = Either::new_left(10);
-    /// let and_then_right: Either<u8, u8> = left.and_then_left(|x| Either::new_right(x * 10))?;
-    /// assert!(and_then_right.is_right());
-    /// assert_eq!(and_then_right.right_ref()?, &100);
+    /// let left: Either<u16, u16> = Either::new_left(10);
+    /// let and_then_left: Either<u16, _> = left
+    ///     .and_then_left(|x| Either::new_left(x * 10))?
+    ///     .and_then_left(|x: u16| Either::new_left(x * 10))?;
+    /// assert!(and_then_left.is_left());
+    /// assert_eq!(and_then_left.left_ref()?, &1000);
     /// #   Ok(())
     /// # }
     pub fn and_then_left<F, S>(self, f: F) -> Fallible<Either<S, R>>
@@ -306,8 +361,8 @@ impl<L, R> Either<L, R> {
     {
         if let Some(l) = self.left {
             Ok(f(l))
-        } else if let Some(r) = self.right {
-            Ok(Either::new_right(r))
+        } else if self.right.is_some() {
+            Err(failure::err_msg("Right encountered in and_then_left"))
         } else {
             Err(failure::err_msg("Invalid Either"))
         }
@@ -322,18 +377,20 @@ impl<L, R> Either<L, R> {
     /// # use libeither::Either;
     /// #
     /// # fn main() -> Fallible<()> {
-    /// let right: Either<u8, u8> = Either::new_right(10);
-    /// let and_then_left: Either<u8, u8> = right.and_then_right(|x| Either::new_left(x * 10))?;
-    /// assert!(and_then_left.is_left());
-    /// assert_eq!(and_then_left.left_ref()?, &100);
+    /// let right: Either<u16, u16> = Either::new_right(10);
+    /// let and_then_right: Either<u16, u16> = right
+    ///     .and_then_right(|x| Either::new_right(x * 10))?
+    ///     .and_then_right(|x: u16| Either::new_right(x * 10))?;
+    /// assert!(and_then_right.is_right());
+    /// assert_eq!(and_then_right.right_ref()?, &1000);
     /// #   Ok(())
     /// # }
     pub fn and_then_right<F, S>(self, f: F) -> Fallible<Either<L, S>>
     where
         F: FnOnce(R) -> Either<L, S>,
     {
-        if let Some(l) = self.left {
-            Ok(Either::new_left(l))
+        if self.left.is_some() {
+            Err(failure::err_msg("Left encountered in and_then_right"))
         } else if let Some(r) = self.right {
             Ok(f(r))
         } else {
@@ -427,13 +484,6 @@ where
 
     fn nth(&mut self, n: usize) -> Option<Self::Item> {
         either_else!(*self, ref mut inner => inner.nth(n), None)
-    }
-
-    fn collect<B>(self) -> B
-    where
-        B: iter::FromIterator<Self::Item>,
-    {
-        either_else!(self, inner => inner.collect(), std::iter::FromIterator::from_iter(vec![]))
     }
 
     fn all<F>(&mut self, f: F) -> bool
@@ -718,19 +768,19 @@ mod tests {
 
     #[test]
     fn and_then_left() -> Fallible<()> {
-        let left: Either<u8, u8> = Either::new_left(10);
-        let and_then_right: Either<u8, u8> = left.and_then_left(|x| Either::new_right(x * 10))?;
-        assert!(and_then_right.is_right());
-        assert_eq!(and_then_right.right_ref()?, &100);
+        let left: Either<u16, u16> = Either::new_left(10);
+        let and_then_left: Either<u16, u16> = left
+            .and_then_left(|x| Either::new_left(x * 10))?
+            .and_then_left(|x: u16| Either::new_left(x * 10))?;
+        assert!(and_then_left.is_left());
+        assert_eq!(and_then_left.left_ref()?, &1000);
         Ok(())
     }
 
     #[test]
     fn and_then_left_on_right() -> Fallible<()> {
         let right: Either<u8, u8> = Either::new_right(10);
-        let and_then_right: Either<u8, u8> = right.and_then_left(|x| Either::new_left(x * 10))?;
-        assert!(and_then_right.is_right());
-        assert_eq!(and_then_right.right_ref()?, &10);
+        assert!(right.and_then_left(|x| Either::new_left(x * 10)).is_err());
         Ok(())
     }
 
@@ -747,19 +797,19 @@ mod tests {
 
     #[test]
     fn and_then_right() -> Fallible<()> {
-        let right: Either<u8, u8> = Either::new_right(10);
-        let and_then_left: Either<u8, u8> = right.and_then_right(|x| Either::new_left(x * 10))?;
-        assert!(and_then_left.is_left());
-        assert_eq!(and_then_left.left_ref()?, &100);
+        let right: Either<u16, u16> = Either::new_right(10);
+        let and_then_right: Either<u16, u16> = right
+            .and_then_right(|x| Either::new_right(x * 10))?
+            .and_then_right(|x| Either::new_right(x * 10))?;
+        assert!(and_then_right.is_right());
+        assert_eq!(and_then_right.right_ref()?, &1000);
         Ok(())
     }
 
     #[test]
     fn and_then_right_on_left() -> Fallible<()> {
         let left: Either<u8, u8> = Either::new_left(10);
-        let and_then_left: Either<u8, u8> = left.and_then_right(|x| Either::new_right(x * 10))?;
-        assert!(and_then_left.is_left());
-        assert_eq!(and_then_left.left_ref()?, &10);
+        assert!(left.and_then_right(|x| Either::new_right(x * 10)).is_err());
         Ok(())
     }
 

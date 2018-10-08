@@ -12,14 +12,14 @@ repository = "https://github.com/rustyhorde/libeither"
 version = "0.2.0"
 
 [package.metadata.docs.rs]
-features = ["serde","unstable"]
+features = ["use_std", "serde", "unstable"]
 
 [dependencies]
 failure = "0"
 serde = { version = "1", optional = true, features = ["derive"] }
 
 [features]
-default = []
+default = ["serde"]
 unstable = []
 
 [dev-dependencies]
