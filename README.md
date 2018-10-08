@@ -4,6 +4,10 @@ An Either struct, that allows serialization to more formats (specifically TOML).
 This library is heavily influenced by the [Either](https://docs.rs/either/latest) enum library.  If you don't need struct specific
 serialization, you may want to use the enum Either instead.
 
+## Features
+* `serde` - Enable serialization (on by default)
+* `unstable` - Enable unstable options (nightly only, off by default)
+
 ## Current Version
 [![Crates.io](https://img.shields.io/crates/v/libeither.svg)](https://crates.io/crates/libeither)
 [![Crates.io](https://img.shields.io/crates/l/libeither.svg)](https://crates.io/crates/libeither)

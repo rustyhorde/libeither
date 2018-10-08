@@ -15,7 +15,6 @@
 //!
 //! # Features
 //! * `serde` - Enable serialization (on by default)
-//! * `use_std` - Enable the standard library (on by default)
 //! * `unstable` - Enable unstable options (nightly only, off by default)
 //!
 //! # Examples
