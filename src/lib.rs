@@ -786,11 +786,9 @@ mod tests {
     #[test]
     fn and_then_left_invalid() -> Fallible<()> {
         let invalid = invalid();
-        assert!(
-            invalid
-                .and_then_left(|x| Either::new_left(x.len()))
-                .is_err()
-        );
+        assert!(invalid
+            .and_then_left(|x| Either::new_left(x.len()))
+            .is_err());
         Ok(())
     }
 
@@ -815,11 +813,9 @@ mod tests {
     #[test]
     fn and_then_right_invalid() -> Fallible<()> {
         let invalid = invalid();
-        assert!(
-            invalid
-                .and_then_right(|x| Either::new_right(x.len()))
-                .is_err()
-        );
+        assert!(invalid
+            .and_then_right(|x| Either::new_right(x.len()))
+            .is_err());
         Ok(())
     }
 
