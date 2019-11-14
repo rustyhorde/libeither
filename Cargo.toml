@@ -9,18 +9,19 @@ license = "MIT/Apache-2.0"
 name = "libeither"
 readme = "README.md"
 repository = "https://github.com/rustyhorde/libeither"
-version = "0.3.0"
+version = "0.4.0"
 
 [package.metadata.docs.rs]
-features = ["serde", "unstable"]
+features = ["serde", "serde_derive"]
 
 [dependencies]
-failure = "0"
-serde = { version = "1", optional = true, features = ["derive"] }
+serde = { version = "1", optional = true }
+serde_derive = { version = "1", optional = true }
 
 [features]
-default = ["serde"]
+serialization = ["serde", "serde_derive"]
 unstable = []
+default = ["serialization"]
 
 [dev-dependencies]
 toml = "0"
