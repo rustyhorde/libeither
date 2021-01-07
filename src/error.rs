@@ -204,19 +204,7 @@ enum ErrSource {
     TomlSer(toml::ser::Error),
 }
 
-impl std::error::Error for ErrSource {
-    fn description(&self) -> &str {
-        match self {
-            Self::Io(source) => source.description(),
-            #[cfg(all(test, feature = "serde"))]
-            Self::SerdeJson(source) => source.description(),
-            #[cfg(all(test, feature = "serde"))]
-            Self::TomlDe(source) => source.description(),
-            #[cfg(all(test, feature = "serde"))]
-            Self::TomlSer(source) => source.description(),
-        }
-    }
-}
+impl std::error::Error for ErrSource {}
 
 impl fmt::Display for ErrSource {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {

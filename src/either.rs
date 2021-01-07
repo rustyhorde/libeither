@@ -561,10 +561,6 @@ where
     L: std::error::Error,
     R: std::error::Error,
 {
-    fn description(&self) -> &str {
-        either_else!(&self, ref inner => inner.description(), "Invalid Either (Error")
-    }
-
     fn cause(&self) -> Option<&dyn std::error::Error> {
         either_else!(&self, ref inner => inner.source(), None)
     }
@@ -585,7 +581,6 @@ mod tests {
     use super::{io_err, Either};
     use crate::error::Result;
     use std::convert::TryInto;
-    use std::error::Error;
     use std::io::{self, Cursor, Read, Write};
 
     fn invalid<'a>() -> Either<&'a str, &'a str> {
@@ -606,8 +601,8 @@ mod tests {
     #[test]
     fn io_err_works() {
         assert_eq!(
-            io_err("test").description(),
-            io::Error::new(io::ErrorKind::Other, "test").description()
+            format!("{}", io_err("test")),
+            format!("{}", io::Error::new(io::ErrorKind::Other, "test"))
         );
     }
 
