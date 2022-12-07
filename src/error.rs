@@ -15,6 +15,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 /// An error from the `libeither` library
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct Error {
     /// the code
     code: ErrCode,
@@ -33,7 +34,7 @@ impl Error {
     {
         let reason = reason.into();
         let code_str: &str = code.into();
-        let description = format!("{}: {}", code_str, reason.clone());
+        let description = format!("{code_str}: {reason}");
 
         Self {
             code,
@@ -76,19 +77,16 @@ impl fmt::Display for Error {
     #[cfg(feature = "unstable")]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use std::error::Error;
-        let res = std::error::Error::iter_sources(self).fold(
-            self.description().to_string(),
-            |mut s, e| {
-                s.push_str(&format!(" => {}", e));
-                s
-            },
-        );
+        let res = <dyn Error>::sources(self).fold(format!("{self}"), |mut s, e| {
+            s.push_str(&format!(" => {}", e));
+            s
+        });
         write!(f, "{}", res)
     }
 
     #[cfg(not(feature = "unstable"))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.description.to_string())
+        write!(f, "{}", self.description)
     }
 }
 
@@ -97,8 +95,8 @@ impl From<&str> for Error {
     fn from(text: &str) -> Self {
         let split = text.split(':');
         let vec = split.collect::<Vec<&str>>();
-        let code = vec.get(0).unwrap_or_else(|| &"");
-        let reason = vec.get(1).unwrap_or_else(|| &"");
+        let code = vec.first().unwrap_or(&"");
+        let reason = vec.get(1).unwrap_or(&"");
         Self::new((*code).into(), *reason, None)
     }
 }
@@ -117,7 +115,7 @@ enum ErrCode {
 }
 
 impl From<ErrCode> for &str {
-    fn from(value: ErrCode) -> &str {
+    fn from(value: ErrCode) -> &'static str {
         match value {
             ErrCode::Left => "left",
             ErrCode::Right => "right",

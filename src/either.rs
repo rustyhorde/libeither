@@ -9,14 +9,14 @@
 //! Either struct
 
 use crate::error::{Error, Result};
-#[cfg(feature = "serde_derive")]
-use serde_derive::{Deserialize, Serialize};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use std::io::{self, BufRead, Read, Write};
 
 /// A struct representing either a left value, or a right value.
-#[cfg_attr(feature = "serde_derive", derive(Deserialize, Serialize))]
+#[cfg_attr(feature = "serde", derive(Deserialize, Serialize))]
 #[derive(Copy, Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub struct Either<L, R> {
     /// The left value in the struct.
@@ -562,7 +562,7 @@ where
     R: std::error::Error,
 {
     fn cause(&self) -> Option<&dyn std::error::Error> {
-        either_else!(&self, ref inner => inner.source(), None)
+        either_else!(self, ref inner => inner.source(), None)
     }
 }
 
@@ -572,7 +572,7 @@ where
     R: fmt::Display,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        either_else!(&self, ref inner => inner.fmt(f), Err(fmt::Error))
+        either_else!(self, ref inner => inner.fmt(f), Err(fmt::Error))
     }
 }
 
