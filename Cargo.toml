@@ -2,7 +2,7 @@
 authors = ["Jason Ozias <jason.g.ozias@gmail.com>"]
 description = "Either struct for Rust"
 documentation = "https://docs.rs/libeither"
-edition = "2018"
+edition = "2021"
 homepage = "https://github.com/rustyhorde/libeither"
 keywords = ["either", "struct"]
 license = "MIT/Apache-2.0"

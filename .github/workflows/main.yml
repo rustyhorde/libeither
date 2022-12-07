@@ -1,0 +1,208 @@
+on:
+  # Trigger the workflow on push to master or any pull request
+  # Ignore all tags
+  push:
+    branches:
+      - master
+    tags-ignore: '*'
+  pull_request:
+    branches:
+      - '*'
+    tags-ignore: '*'
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    - cron:  '13 3 * * *'
+
+name: CI
+
+jobs:
+  rustfmt:
+    name: ☢️ Formatting ☢️
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt
+      - run: cargo fmt --all -- --check
+  lints:
+    name: 🕳️ Lints 🕳️
+    needs: rustfmt
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rust: "1.65.0"
+          - os: ubuntu-latest
+            rust: stable
+          - os: ubuntu-latest
+            rust: beta
+          - os: ubuntu-latest
+            rust: nightly
+          - os: macos-latest
+            rust: stable
+          - os: windows-latest
+            rust: stable
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: clippy
+      - run: cargo clippy --all -- -D warnings
+  test-linux:
+    name: 🧪 Linux 🧪
+    needs: lints
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: ubuntu-latest
+          rust: "1.65.0"
+        - os: ubuntu-latest
+          rust: stable
+        - os: ubuntu-latest
+          rust: beta
+        - os: ubuntu-latest
+          rust: nightly
+    steps:
+      - name: ✔️ Checkout ✔️
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: 💵 Cache 💵
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/cargo-tarpaulin*
+            ~/.cargo/bin/cargo-*-all-features*
+          key: ${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1
+        name: 🧰 Toolchain 🧰
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: 💾 Install (cargo-tarpaulin) 💾
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-tarpaulin
+          version: latest
+          use-tool-cache: true
+        continue-on-error: true
+      - name: 💾 Install (cargo-all-features) 💾
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-all-features
+          version: latest
+          use-tool-cache: true
+        continue-on-error: true
+      - name: 🧪 Test 🧪
+        run: cargo test-all-features
+      - name: 🙊 Code Coverage 🙊
+        run: cargo tarpaulin --out Xml
+      - name: 🙊 Upload Code Coverage 🙊
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./cobertura.xml
+  test-macos:
+    name: 🧪 MacOS 🧪
+    needs: lints
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: macos-latest
+          rust: "1.65.0"
+        - os: macos-latest
+          rust: stable
+        - os: macos-latest
+          rust: beta
+        - os: macos-latest
+          rust: nightly
+    steps:
+      - name: ✔️ Checkout ✔️
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: 💵 Cache 💵
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/cargo-*-all-features*
+          key: ${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1
+        name: 🧰 Toolchain 🧰
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: 💾 Install (cargo-all-features) 💾
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-all-features
+          version: latest
+          use-tool-cache: true
+        continue-on-error: true
+      - name: 🧪 Test 🧪
+        run: cargo test-all-features
+  test-windows:
+    name: 🧪 Windows 🧪
+    needs: lints
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+        - os: windows-latest
+          rust: 1.65.0-msvc
+        - os: windows-latest
+          rust: stable-msvc
+        - os: windows-latest
+          rust: beta-msvc
+        - os: windows-latest
+          rust: nightly-msvc
+        - os: windows-latest
+          rust: 1.65.0-gnu
+        - os: windows-latest
+          rust: stable-gnu
+        - os: windows-latest
+          rust: beta-gnu
+        - os: windows-latest
+          rust: nightly-gnu
+    steps:
+      - name: ✔️ Checkout ✔️
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: 💵 Cache 💵
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/cargo-*-all-features*
+          key: ${{ runner.os }}-${{ matrix.rust }}-${{ hashFiles('**/Cargo.toml') }}
+      - uses: actions-rs/toolchain@v1
+        name: 🧰 Toolchain 🧰
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+      - name: 💾 Install (cargo-all-features) 💾
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-all-features
+          version: latest
+          use-tool-cache: true
+        continue-on-error: true
+      - name: 🧪 Test 🧪
+        run: cargo test-all-features
