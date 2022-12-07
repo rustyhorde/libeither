@@ -116,23 +116,26 @@ enum ErrCode {
     Unknown,
 }
 
-impl Into<&str> for ErrCode {
-    #[must_use]
-    fn into(self) -> &'static str {
-        match self {
-            Self::Left => "left",
-            Self::Right => "right",
-            Self::Invalid => "invalid",
-            Self::Unknown => "unknown",
+impl From<ErrCode> for &str {
+    fn from(value: ErrCode) -> &str {
+        match value {
+            ErrCode::Left => "left",
+            ErrCode::Right => "right",
+            ErrCode::Invalid => "invalid",
+            ErrCode::Unknown => "unknown",
         }
     }
 }
 
-impl Into<String> for ErrCode {
-    #[must_use]
-    fn into(self) -> String {
-        let tmp: &str = self.into();
-        tmp.to_string()
+impl From<ErrCode> for String {
+    fn from(value: ErrCode) -> String {
+        match value {
+            ErrCode::Left => "left",
+            ErrCode::Right => "right",
+            ErrCode::Invalid => "invalid",
+            ErrCode::Unknown => "unknown",
+        }
+        .to_string()
     }
 }
 
@@ -209,13 +212,13 @@ impl std::error::Error for ErrSource {}
 impl fmt::Display for ErrSource {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::Io(source) => write!(f, "{}", source),
+            Self::Io(source) => write!(f, "{source}"),
             #[cfg(all(test, feature = "serde"))]
-            Self::SerdeJson(source) => write!(f, "{}", source),
+            Self::SerdeJson(source) => write!(f, "{source}"),
             #[cfg(all(test, feature = "serde"))]
-            Self::TomlDe(source) => write!(f, "{}", source),
+            Self::TomlDe(source) => write!(f, "{source}"),
             #[cfg(all(test, feature = "serde"))]
-            Self::TomlSer(source) => write!(f, "{}", source),
+            Self::TomlSer(source) => write!(f, "{source}"),
         }
     }
 }
