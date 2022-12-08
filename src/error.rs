@@ -74,7 +74,7 @@ impl std::error::Error for Error {
 }
 
 impl fmt::Display for Error {
-    #[cfg(feature = "unstable")]
+    #[cfg(all(nightly_lints, feature = "unstable"))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use std::error::Error;
         let res = <dyn Error>::sources(self).fold(format!("{self}"), |mut s, e| {
@@ -84,7 +84,12 @@ impl fmt::Display for Error {
         write!(f, "{}", res)
     }
 
-    #[cfg(not(feature = "unstable"))]
+    #[cfg(any(stable_lints, beta_lints))]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.description)
+    }
+
+    #[cfg(all(nightly_lints, not(feature = "unstable")))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.description)
     }

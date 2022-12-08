@@ -62,6 +62,8 @@ impl<L, R> Either<L, R> {
     /// If this is performed on a `Right` variant, an
     /// error returned.
     ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -96,6 +98,8 @@ impl<L, R> Either<L, R> {
     /// This consumes the either in the process.
     /// If this is performed on a `Left` variant, an
     /// error returned.
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -140,6 +144,8 @@ impl<L, R> Either<L, R> {
 
     /// Extract a reference to the left value.
     ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -155,6 +161,8 @@ impl<L, R> Either<L, R> {
 
     /// Extract a reference to the right value.
     ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -169,6 +177,8 @@ impl<L, R> Either<L, R> {
     }
 
     /// Extract a mutable reference to the left value.
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -187,6 +197,8 @@ impl<L, R> Either<L, R> {
 
     /// Extract a mutable reference to the right value.
     ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -203,6 +215,8 @@ impl<L, R> Either<L, R> {
     }
 
     /// Convert `Either<L, R>` to `Either<R, L>`
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -228,6 +242,8 @@ impl<L, R> Either<L, R> {
     /// Apply the function `f` on the `Left` value, returning the result
     /// in a `Left`. If this is applied to a `Right`, the `Right` is
     /// returned.
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -257,6 +273,8 @@ impl<L, R> Either<L, R> {
     /// in a `Right`.  If this is applied to a `Left`, the `Left` is
     /// returned.
     ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -285,6 +303,8 @@ impl<L, R> Either<L, R> {
     /// returning the result `Left(fl(l))`.  If the variant is a `Right` value,
     /// apply the function `fr` on the `Right` value, returning the result
     /// `Right(fr(r))`.  If the varian is invalid, return an error.
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -320,6 +340,8 @@ impl<L, R> Either<L, R> {
     /// is present and return `Left(f(l))`. Otherwise, returns the `Right`
     /// variant. If the `Either` is invalid, this function will return an
     /// `Error` result.
+    ///
+    /// # Errors
     ///
     /// ```
     /// # use libeither::{Either, Result};
@@ -358,6 +380,9 @@ impl<L, R> Either<L, R> {
     /// variant.  If the `Either` is invalid, this function will return an
     /// `Error` result.
     ///
+    ///
+    /// # Errors
+    ///
     /// ```
     /// # use libeither::{Either, Result};
     /// #
@@ -384,6 +409,9 @@ impl<L, R> Either<L, R> {
     }
 
     /// Convert the inners to iters
+    ///
+    /// # Errors
+    ///
     #[allow(clippy::should_implement_trait)]
     pub fn into_iter(self) -> Result<Either<L::IntoIter, R::IntoIter>>
     where
@@ -442,7 +470,7 @@ where
     where
         T: IntoIterator<Item = A>,
     {
-        either!(*self, ref mut inner => inner.extend(iter))
+        either!(*self, ref mut inner => inner.extend(iter));
     }
 }
 
@@ -538,7 +566,7 @@ where
     }
 
     fn consume(&mut self, amt: usize) {
-        either!(*self, ref mut inner => inner.consume(amt))
+        either!(*self, ref mut inner => inner.consume(amt));
     }
 }
 
