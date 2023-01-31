@@ -23,7 +23,7 @@ unstable = []
 default = ["serialization"]
 
 [dev-dependencies]
-toml = "0.5.9"
+toml = "0.7.1"
 serde_json = "1.0.89"
 
 [build-dependencies]
