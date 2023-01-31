@@ -77,11 +77,11 @@ impl fmt::Display for Error {
     #[cfg(all(nightly_lints, feature = "unstable"))]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use std::error::Error;
-        let res = <dyn Error>::sources(self).fold(format!("{self}"), |mut s, e| {
-            s.push_str(&format!(" => {}", e));
+        let res = <dyn Error>::sources(self).fold(String::new(), |mut s, e| {
+            s.push_str(&format!(" => {e}"));
             s
         });
-        write!(f, "{}", res)
+        write!(f, "{res}")
     }
 
     #[cfg(any(stable_lints, beta_lints))]

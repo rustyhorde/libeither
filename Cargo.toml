@@ -15,7 +15,7 @@ version = "0.5.0"
 features = ["serde"]
 
 [dependencies]
-serde = { version = "1.0.149", optional = true, features = ["derive"] }
+serde = { version = "1.0.152", optional = true, features = ["derive"] }
 
 [features]
 serialization = ["serde"]
@@ -23,8 +23,8 @@ unstable = []
 default = ["serialization"]
 
 [dev-dependencies]
-toml = "0.5.9"
-serde_json = "1.0.89"
+toml = "0.7.1"
+serde_json = "1.0.91"
 
 [build-dependencies]
-rustversion = "1.0.9"
+rustversion = "1.0.11"

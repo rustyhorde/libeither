@@ -686,10 +686,9 @@ mod tests {
     }
 
     #[test]
-    fn left_ref_mut_invalid() -> Result<()> {
+    fn left_ref_mut_invalid() {
         let mut invalid = invalid();
         assert!(invalid.left_mut().is_err());
-        Ok(())
     }
 
     #[test]
@@ -710,10 +709,9 @@ mod tests {
     }
 
     #[test]
-    fn right_ref_mut_invalid() -> Result<()> {
+    fn right_ref_mut_invalid() {
         let mut invalid = invalid();
         assert!(invalid.right_mut().is_err());
-        Ok(())
     }
 
     #[test]
@@ -737,13 +735,12 @@ mod tests {
     }
 
     #[test]
-    fn flip_invalid() -> Result<()> {
+    fn flip_invalid() {
         let invalid: Either<&str, &str> = Either {
             left: None,
             right: None,
         };
         assert!(invalid.flip().is_err());
-        Ok(())
     }
 
     #[test]
@@ -756,10 +753,9 @@ mod tests {
     }
 
     #[test]
-    fn map_left_invalid() -> Result<()> {
+    fn map_left_invalid() {
         let invalid = invalid();
         assert!(invalid.map_left(ToString::to_string).is_err());
-        Ok(())
     }
 
     #[test]
@@ -780,10 +776,9 @@ mod tests {
     }
 
     #[test]
-    fn map_right_invalid() -> Result<()> {
+    fn map_right_invalid() {
         let invalid = invalid();
         assert!(invalid.map_right(ToString::to_string).is_err());
-        Ok(())
     }
 
     #[test]
@@ -823,12 +818,11 @@ mod tests {
     }
 
     #[test]
-    fn and_then_left_invalid() -> Result<()> {
+    fn and_then_left_invalid() {
         let invalid = invalid();
         assert!(invalid
             .and_then_left(|x| Either::new_left(x.len()))
             .is_err());
-        Ok(())
     }
 
     #[test]
@@ -852,12 +846,11 @@ mod tests {
     }
 
     #[test]
-    fn and_then_right_invalid() -> Result<()> {
+    fn and_then_right_invalid() {
         let invalid = invalid();
         assert!(invalid
             .and_then_right(|x| Either::new_right(x.len()))
             .is_err());
-        Ok(())
     }
 
     #[test]
@@ -897,11 +890,10 @@ mod tests {
     }
 
     #[test]
-    fn try_into_invalid() -> Result<()> {
+    fn try_into_invalid() {
         let invalid = invalid();
         let result: Result<std::result::Result<&str, &str>> = Either::try_into(invalid);
         assert!(result.is_err());
-        Ok(())
     }
 
     #[test]
@@ -965,13 +957,12 @@ mod tests {
     }
 
     #[test]
-    fn invalid_into_iter() -> Result<()> {
+    fn invalid_into_iter() {
         let invalid: Either<Vec<u32>, Vec<u32>> = Either {
             left: None,
             right: None,
         };
         assert!(invalid.into_iter().is_err());
-        Ok(())
     }
 
     #[test]
@@ -1022,7 +1013,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn deserialize_json_left() -> Result<()> {
         let json = r#"{"left":"lefty","right":null}"#;
-        let left: Either<&str, &str> = serde_json::from_str(&json)?;
+        let left: Either<&str, &str> = serde_json::from_str(json)?;
         assert!(left.is_left());
         assert_eq!(left.left_ref()?, &"lefty");
         Ok(())
@@ -1033,7 +1024,8 @@ mod tests {
     fn deserialize_toml_left() -> Result<()> {
         let toml = r#"left = "lefty"
 "#;
-        let left: Either<&str, &str> = toml::from_str(&toml)?;
+
+        let left: Either<String, String> = toml::from_str(toml)?;
         assert!(left.is_left());
         assert_eq!(left.left_ref()?, &"lefty");
         Ok(())
@@ -1043,7 +1035,7 @@ mod tests {
     #[cfg(feature = "serde")]
     fn deserialize_json_right() -> Result<()> {
         let json = r#"{"left":null,"right":"righty"}"#;
-        let right: Either<&str, &str> = serde_json::from_str(&json)?;
+        let right: Either<String, String> = serde_json::from_str(json)?;
         assert!(right.is_right());
         assert_eq!(right.right_ref()?, &"righty");
         Ok(())
@@ -1054,7 +1046,7 @@ mod tests {
     fn deserialize_toml_right() -> Result<()> {
         let toml = r#"right = "righty"
 "#;
-        let right: Either<&str, &str> = toml::from_str(&toml)?;
+        let right: Either<String, String> = toml::from_str(toml)?;
         assert!(right.is_right());
         assert_eq!(right.right_ref()?, &"righty");
         Ok(())

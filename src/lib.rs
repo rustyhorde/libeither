@@ -235,6 +235,7 @@
     allow(unstable_features)
 )]
 #![cfg_attr(all(msrv, not(feature = "unstable")), deny(unstable_features))]
+#![cfg_attr(all(test, msrv), allow(clippy::result_large_err))]
 
 mod either;
 mod error;
